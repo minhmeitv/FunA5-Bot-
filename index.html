@@ -76,38 +76,105 @@ body {
   border-radius: 12px;
   background: linear-gradient(135deg, #10b981, #06b6d4);
   display: grid; place-items: center;
-  font-weight: 700; font-size: 13px;
-  color: #022;
   box-shadow: 0 4px 14px rgba(6,182,212,0.3);
   flex-shrink: 0;
+}
+/* Mặt bot vẽ thuần bằng CSS, dùng chung cho logo sidebar và avatar header */
+.bot-face { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.bot-eyes { display: flex; gap: 5px; }
+.bot-eye {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: rgba(2,20,20,0.85);
+}
+.bot-mouth {
+  width: 12px; height: 6px;
+  border-bottom: 2px solid rgba(2,20,20,0.85);
+  border-radius: 0 0 8px 8px;
 }
 .brand-info h1 { font-size: 15px; font-weight: 700; line-height: 1.2; }
 .brand-info p { font-size: 11px; color: var(--muted); }
 
 .sidebar-btns {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
-.btn {
+/* Nút dạng viên thuốc (pill), chỉ dùng đồ hoạ CSS thay cho chữ */
+.icon-btn {
   background: rgba(255,255,255,0.04);
   border: 1px solid var(--border);
-  padding: 7px 12px;
-  border-radius: 10px;
+  height: 42px;
+  border-radius: 999px;
   color: var(--muted);
-  font-size: 12px;
   font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
-.btn.primary {
+.icon-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); transform: translateY(-1px); }
+.icon-btn:active { transform: translateY(0); }
+.icon-btn.primary {
   background: linear-gradient(90deg, #0ea5e9, #06b6d4);
   color: #021;
-  font-weight: 600;
   border: none;
 }
-.btn.primary:hover { opacity: 0.9; }
+.icon-btn.primary:hover { opacity: 0.9; }
+
+.icon-plus, .icon-trash, .icon-save { position: relative; width: 14px; height: 14px; }
+.icon-plus::before, .icon-plus::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+  border-radius: 2px;
+}
+.icon-plus::before { width: 14px; height: 2px; top: 6px; left: 0; }
+.icon-plus::after { width: 2px; height: 14px; top: 0; left: 6px; }
+
+.icon-trash {
+  width: 11px; height: 12px;
+  margin-top: 4px;
+  border: 2px solid currentColor;
+  border-top: none;
+  border-radius: 0 0 3px 3px;
+}
+.icon-trash::before {
+  content: '';
+  position: absolute;
+  top: -5px; left: -3px;
+  width: 15px; height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+.icon-trash::after {
+  content: '';
+  position: absolute;
+  top: -7px; left: 3px;
+  width: 7px; height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+.icon-save { width: 14px; height: 3px; border-bottom: 2px solid currentColor; margin-top: 11px; }
+.icon-save::before {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: 3px;
+  width: 2px; height: 9px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+.icon-save::after {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: 2px;
+  width: 7px; height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateX(-50%) rotate(45deg);
+}
 
 .sidebar-label {
   font-size: 10px;
@@ -187,35 +254,22 @@ body {
   border-radius: 11px;
   background: linear-gradient(135deg, #f59e0b, #ef4444);
   display: grid; place-items: center;
-  font-weight: 700; font-size: 12px;
-  color: #fff;
 }
+.avatar .bot-eye { background: rgba(255,255,255,0.9); }
+.avatar .bot-mouth { border-bottom-color: rgba(255,255,255,0.9); }
 .title h2 { font-size: 15px; font-weight: 700; }
 .title p { font-size: 11px; color: var(--muted); }
 
-.status-dot {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--muted);
-}
-.status-dot::before {
-  content: '';
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 6px #4ade80;
-  animation: pulse-dot 2s infinite;
-}
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
 /* ========== MESSAGES ========== */
+.messages-shell {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
 .messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 20px 20px 8px;
   display: flex;
@@ -226,6 +280,42 @@ body {
 .messages::-webkit-scrollbar { width: 4px; }
 .messages::-webkit-scrollbar-track { background: transparent; }
 .messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+/* Nút mũi tên cuộn xuống cuối (vẽ hoàn toàn bằng CSS) */
+.scroll-bottom-btn {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(8px) scale(0.9);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s, background 0.15s;
+  z-index: 5;
+}
+.scroll-bottom-btn.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+.scroll-bottom-btn:hover { background: rgba(255,255,255,0.1); }
+.scroll-bottom-btn:active { transform: scale(0.92); }
+.arrow-down-icon {
+  width: 9px; height: 9px;
+  border-right: 2px solid var(--text);
+  border-bottom: 2px solid var(--text);
+  transform: rotate(45deg) translate(-1px,-2px);
+}
 
 .msg {
   max-width: 72%;
@@ -418,7 +508,12 @@ body {
     <button class="sidebar-close" id="sidebarClose">✕ Đóng</button>
 
     <div class="brand">
-      <div class="logo">FA5</div>
+      <div class="logo">
+        <div class="bot-face">
+          <div class="bot-eyes"><span class="bot-eye"></span><span class="bot-eye"></span></div>
+          <div class="bot-mouth"></div>
+        </div>
+      </div>
       <div class="brand-info">
         <h1>FunA5 Bot</h1>
         <p>A5 Bot AI Series</p>
@@ -426,9 +521,9 @@ body {
     </div>
 
     <div class="sidebar-btns">
-      <button class="btn" id="newConvBtn">Đoạn Chat mới</button>
-      <button class="btn" id="clearBtn">Xoá</button>
-      <button class="btn primary" id="saveBtn">Lưu</button>
+      <button class="icon-btn" id="newConvBtn" title="Đoạn chat mới" aria-label="Đoạn chat mới"><span class="icon-plus"></span></button>
+      <button class="icon-btn" id="clearBtn" title="Xoá lịch sử" aria-label="Xoá lịch sử"><span class="icon-trash"></span></button>
+      <button class="icon-btn primary" id="saveBtn" title="Lưu cuộc trò chuyện" aria-label="Lưu cuộc trò chuyện"><span class="icon-save"></span></button>
     </div>
 
     <div class="sidebar-label">Lịch sử</div>
@@ -443,17 +538,26 @@ body {
     <div class="header">
       <div class="header-left">
         <button class="menu-btn" id="menuBtn">☰</button>
-        <div class="avatar">FA5</div>
+        <div class="avatar">
+          <div class="bot-face">
+            <div class="bot-eyes"><span class="bot-eye"></span><span class="bot-eye"></span></div>
+            <div class="bot-mouth"></div>
+          </div>
+        </div>
         <div class="title">
           <h2>FunA5 Bot</h2>
           <p>Trò chuyện cùng FunA5!</p>
         </div>
       </div>
-      <div class="status-dot">Online</div>
     </div>
 
     <!-- Messages -->
-    <div class="messages" id="messages" aria-live="polite"></div>
+    <div class="messages-shell">
+      <div class="messages" id="messages" aria-live="polite"></div>
+      <button class="scroll-bottom-btn" id="scrollBottomBtn" title="Xuống cuối" aria-label="Cuộn xuống tin nhắn mới nhất">
+        <span class="arrow-down-icon"></span>
+      </button>
+    </div>
 
     <!-- Input -->
     <div class="input-wrap">
@@ -664,6 +768,7 @@ const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('overlay');
 const menuBtn = document.getElementById('menuBtn');
 const sidebarClose = document.getElementById('sidebarClose');
+const scrollBtn = document.getElementById('scrollBottomBtn');
 
 // Sidebar toggle
 function openSidebar() {
@@ -709,6 +814,17 @@ function appendBubble(role, text, animate = true) {
 function scrollBottom() {
   msgsEl.scrollTop = msgsEl.scrollHeight;
 }
+
+// Hiện nút mũi tên khi người dùng cuộn lên đọc lại tin nhắn cũ,
+// tự ẩn đi khi đã ở cuối khung chat.
+function isNearBottom(threshold = 60) {
+  return msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < threshold;
+}
+function updateScrollBtn() {
+  scrollBtn.classList.toggle('show', !isNearBottom());
+}
+msgsEl.addEventListener('scroll', updateScrollBtn);
+scrollBtn.addEventListener('click', scrollBottom);
 
 function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -864,6 +980,7 @@ document.getElementById('saveBtn').addEventListener('click', () => {
 renderHistory();
 renderMessages();
 startGreeting();
+updateScrollBtn();
 </script>
 </body>
 </html>
