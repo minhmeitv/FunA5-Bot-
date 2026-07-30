@@ -1,0 +1,1356 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<!-- Thêm viewport-fit=cover và interactive-widget=resizes-content để xử lý bàn phím di động cực mượt -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<title>FunA5 Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080e1a;
+  --panel: #0d1526;
+  --panel2: #111c30;
+  --border: rgba(255,255,255,0.06);
+  --muted: #7a8aab;
+  --text: #dce8f8;
+  --accent: #4ade80;
+  --accent2: #22d3ee;
+  --bubble-user: linear-gradient(135deg,#1d4ed8,#1e40af);
+  --bubble-bot: #111c30;
+  --r: 20px;
+  --accent3: #a78bfa;
+  --danger: #f87171;
+  --shadow-soft: 0 10px 28px rgba(0,0,0,0.35);
+  --shadow-pop: 0 16px 40px rgba(0,0,0,0.5);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  /* Dùng 100dvh giúp tự động tính toán lại chiều cao khi có bàn phím xuất hiện */
+  height: 100%;
+  height: 100dvh; 
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Roboto Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+  display: flex;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 20% 10%, rgba(34,211,238,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 90%, rgba(74,222,128,0.05) 0%, transparent 70%);
+}
+
+/* ========== LAYOUT ========== */
+.app {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: 0;
+}
+
+/* ========== SIDEBAR ========== */
+.sidebar {
+  width: 270px;
+  min-width: 270px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 14px;
+  gap: 14px;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Hàng trên cùng sidebar: chỉ còn nút đoạn chat mới ở góc trái (đã bỏ logo/tên bot) */
+.sidebar-top { display: flex; }
+.icon-btn.corner-new {
+  width: auto;
+  padding: 0 16px;
+  justify-content: flex-start;
+}
+.icon-btn.wide { grid-column: 1 / -1; }
+
+.sidebar-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+/* Nút bo góc, có icon + nhãn chữ để rõ chức năng thay vì chỉ icon trần */
+.icon-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  height: 44px;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 13px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.icon-btn .btn-label { overflow: hidden; text-overflow: ellipsis; }
+.icon-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); transform: translateY(-1px); }
+.icon-btn:active { transform: translateY(0); }
+.icon-btn.primary {
+  background: linear-gradient(90deg, #0ea5e9, #06b6d4);
+  color: #021;
+  border: none;
+}
+.icon-btn.primary:hover { opacity: 0.9; color: #021; }
+.icon-btn.teach:hover { background: rgba(167,139,250,0.14); color: #c4b5fd; border-color: rgba(167,139,250,0.35); }
+.icon-btn.danger:hover { background: rgba(248,113,113,0.12); color: var(--danger); border-color: rgba(248,113,113,0.32); }
+.icon-teach { width: 15px; height: 15px; flex-shrink: 0; }
+.icon-teach svg { width: 100%; height: 100%; display: block; }
+
+.icon-plus, .icon-trash, .icon-save { position: relative; width: 14px; height: 14px; }
+.icon-plus::before, .icon-plus::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+  border-radius: 2px;
+}
+.icon-plus::before { width: 14px; height: 2px; top: 6px; left: 0; }
+.icon-plus::after { width: 2px; height: 14px; top: 0; left: 6px; }
+
+.icon-trash {
+  width: 11px; height: 12px;
+  margin-top: 4px;
+  border: 2px solid currentColor;
+  border-top: none;
+  border-radius: 0 0 3px 3px;
+}
+.icon-trash::before {
+  content: '';
+  position: absolute;
+  top: -5px; left: -3px;
+  width: 15px; height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+.icon-trash::after {
+  content: '';
+  position: absolute;
+  top: -7px; left: 3px;
+  width: 7px; height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+.icon-save { width: 14px; height: 3px; border-bottom: 2px solid currentColor; margin-top: 11px; }
+.icon-save::before {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: 3px;
+  width: 2px; height: 9px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+.icon-save::after {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: 2px;
+  width: 7px; height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.sidebar-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+  padding: 0 2px;
+}
+
+.history {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.history::-webkit-scrollbar { width: 4px; }
+.history::-webkit-scrollbar-track { background: transparent; }
+.history::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+.hist-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 8px 9px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.hist-item:hover { background: rgba(255,255,255,0.04); border-color: var(--border); }
+.hist-item.active {
+  background: rgba(34,211,238,0.08);
+  border-color: rgba(34,211,238,0.28);
+}
+.hist-item .hi-main { flex: 1; min-width: 0; }
+.hist-item .hi-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist-item.active .hi-title { color: var(--accent2); }
+.hist-item .hi-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.hist-item .hi-title-input {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--accent2);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 3px 6px;
+  outline: none;
+}
+.hi-rename {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  opacity: 0.55;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+.hi-rename:hover { opacity: 1; background: rgba(255,255,255,0.08); color: var(--text); }
+
+/* ========== MAIN AREA ========== */
+.main {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ========== NÚT NỔI TRÊN KHUNG CHAT ========== */
+/* Đã bỏ hẳn thanh header, nên thêm 2 nút nổi: (+) tạo đoạn chat mới ở góc trái,
+   và nút mở sidebar (chỉ hiện trên di động) ở góc phải để không mất chức năng mở sidebar. */
+.fab-new, .menu-btn {
+  position: absolute;
+  top: 16px;
+  z-index: 20;
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: rgba(13,21,38,0.85);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(6px);
+  transition: all 0.15s;
+}
+.fab-new { left: 16px; font-size: 20px; line-height: 1; }
+.fab-new:hover, .menu-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+.fab-new:active, .menu-btn:active { transform: translateY(0); }
+.menu-btn {
+  display: none;
+  right: 16px;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+/* ========== MESSAGES ========== */
+.messages-shell {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+.messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 70px 20px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-behavior: smooth;
+}
+.messages::-webkit-scrollbar { width: 4px; }
+.messages::-webkit-scrollbar-track { background: transparent; }
+.messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+/* Nút mũi tên cuộn xuống cuối (vẽ hoàn toàn bằng CSS) */
+.scroll-bottom-btn {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(8px) scale(0.9);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s, background 0.15s;
+  z-index: 5;
+}
+.scroll-bottom-btn.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+.scroll-bottom-btn:hover { background: rgba(255,255,255,0.1); }
+.scroll-bottom-btn:active { transform: scale(0.92); }
+.arrow-down-icon {
+  width: 9px; height: 9px;
+  border-right: 2px solid var(--text);
+  border-bottom: 2px solid var(--text);
+  transform: rotate(45deg) translate(-1px,-2px);
+}
+
+.msg-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 72%;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: fadeUp 0.35s ease forwards;
+}
+.msg-row.user { align-self: flex-end; align-items: flex-end; }
+.msg-row.bot { align-self: flex-start; align-items: flex-start; }
+.msg {
+  max-width: 100%;
+  padding: 11px 15px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+.msg.user {
+  background: var(--bubble-user);
+  color: #fff;
+  border-bottom-right-radius: 5px;
+}
+.msg.bot {
+  background: var(--bubble-bot);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 5px;
+}
+.msg-time {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 4px;
+  padding: 0 5px;
+}
+.msg-teach-btn {
+  margin-top: 7px;
+  background: rgba(167,139,250,0.12);
+  border: 1px solid rgba(167,139,250,0.32);
+  color: #c4b5fd;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.msg-teach-btn:hover { background: rgba(167,139,250,0.2); transform: translateY(-1px); }
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Typing indicator */
+.typing-wrap {
+  align-self: flex-start;
+  padding: 12px 16px;
+  background: var(--bubble-bot);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  border-bottom-left-radius: 5px;
+  opacity: 0;
+  animation: fadeUp 0.3s ease forwards;
+}
+.typing {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: blink 1.2s ease-in-out infinite;
+}
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* ========== INPUT AREA ========== */
+.input-wrap {
+  padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.input-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  padding: 6px 6px 6px 20px;
+  transition: border-color 0.2s;
+}
+.input-box:focus-within {
+  border-color: rgba(34,211,238,0.3);
+  box-shadow: 0 0 0 3px rgba(34,211,238,0.06);
+}
+.input-box textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 16px;
+  resize: none;
+  height: 40px;
+  min-height: 40px;
+  max-height: 120px;
+  line-height: 24px;
+  padding: 8px 0;
+  overflow-y: auto;
+}
+.input-box textarea::placeholder { color: var(--muted); }
+.input-box textarea::-webkit-scrollbar { display: none; }
+
+/* ========== SEND BUTTON (Paper Plane) ========== */
+.send-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  box-shadow: 0 4px 14px rgba(6,182,212,0.35);
+}
+.send-btn:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(6,182,212,0.5); }
+.send-btn:active { transform: scale(0.95); }
+
+/* ========== MIC BUTTON (nói để nhập) ========== */
+.mic-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.mic-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+.mic-btn svg { width: 18px; height: 18px; }
+.mic-btn.recording {
+  background: rgba(248,113,113,0.16);
+  border-color: rgba(248,113,113,0.4);
+  color: #fca5a5;
+  animation: micPulse 1.3s ease-in-out infinite;
+}
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.35); }
+  50% { box-shadow: 0 0 0 7px rgba(248,113,113,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mic-btn.recording { animation: none; }
+}
+.send-btn.fly svg {
+  animation: flyAway 0.4s ease forwards;
+}
+@keyframes flyAway {
+  0% { transform: translate(0,0) scale(1); opacity: 1; }
+  60% { transform: translate(6px,-6px) scale(0.8); opacity: 0.6; }
+  100% { transform: translate(14px,-14px) scale(0.5); opacity: 0; }
+}
+
+/* Paper plane SVG icon */
+.send-btn svg {
+  width: 18px; height: 18px;
+  fill: white;
+  margin-left: 2px;
+  transition: transform 0.15s;
+}
+
+/* ========== MODAL (Dạy Bot) ========== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(3,7,15,0.6);
+  backdrop-filter: blur(3px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.modal-overlay.active { display: flex; opacity: 1; }
+.modal {
+  width: 100%;
+  max-width: 380px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--shadow-pop);
+  transform: translateY(10px) scale(0.97);
+  transition: transform 0.2s;
+}
+.modal-overlay.active .modal { transform: translateY(0) scale(1); }
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.modal-head h3 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.modal-close {
+  width: 28px; height: 28px;
+  border-radius: 9px;
+  border: none;
+  background: rgba(255,255,255,0.06);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+.modal-close:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+.modal-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-bottom: 16px; }
+.modal-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: var(--muted); text-transform: uppercase; margin: 12px 0 6px; }
+.modal-input {
+  width: 100%;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+  resize: none;
+}
+.modal-input:focus { border-color: rgba(34,211,238,0.4); }
+.modal-textarea { min-height: 78px; line-height: 1.5; }
+.modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+.modal-btn {
+  flex: 1;
+  height: 42px;
+  border-radius: 12px;
+  border: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.modal-btn:active { transform: scale(0.97); }
+.modal-btn.secondary { background: rgba(255,255,255,0.06); color: var(--muted); }
+.modal-btn.secondary:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+.modal-btn.primary { background: linear-gradient(90deg, var(--accent3), #818cf8); color: #fff; }
+.modal-btn.primary:hover { opacity: 0.92; }
+
+/* ========== TOAST ========== */
+.toast-host {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: #0f2436;
+  border: 1px solid rgba(34,211,238,0.3);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-soft);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: toastIn 0.25s ease forwards, toastOut 0.25s ease 2.2s forwards;
+}
+@keyframes toastIn { to { opacity: 1; transform: translateY(0); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(-6px); } }
+
+/* ========== OVERLAY ========== */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.overlay.active { display: block; opacity: 1; }
+
+/* ========== MOBILE ========== */
+@media (max-width: 860px) {
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 100;
+    transform: translateX(-100%);
+    border-radius: 0 20px 20px 0;
+    box-shadow: 4px 0 30px rgba(0,0,0,0.5);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .menu-btn { display: flex; }
+}
+
+/* Close btn in sidebar on mobile */
+.sidebar-close {
+  display: none;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  align-self: flex-end;
+  margin-bottom: -4px;
+}
+@media (max-width: 860px) {
+  .sidebar-close { display: block; }
+}
+
+/* Scrollbar global */
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
+</style>
+</head>
+<body>
+
+<!-- Overlay for mobile sidebar -->
+<div class="overlay" id="overlay"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <button class="sidebar-close" id="sidebarClose">✕ Đóng</button>
+
+    <div class="sidebar-top">
+      <button class="icon-btn corner-new" id="newConvBtn" title="Đoạn chat mới" aria-label="Đoạn chat mới"><span class="icon-plus"></span><span class="btn-label">Đoạn mới</span></button>
+    </div>
+
+    <div class="sidebar-btns">
+      <button class="icon-btn teach wide" id="teachBtn" title="Dạy bot trả lời" aria-label="Dạy bot trả lời">
+        <span class="icon-teach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,4 22,9 12,14 2,9" fill="currentColor" stroke="none"/><path d="M6 11v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4"/><line x1="22" y1="9" x2="22" y2="15"/></svg></span>
+        <span class="btn-label">Dạy Bot</span>
+      </button>
+      <button class="icon-btn danger" id="clearBtn" title="Xoá lịch sử" aria-label="Xoá lịch sử"><span class="icon-trash"></span><span class="btn-label">Xoá hết</span></button>
+      <button class="icon-btn primary" id="saveBtn" title="Tải cuộc trò chuyện về máy" aria-label="Tải cuộc trò chuyện về máy"><span class="icon-save"></span><span class="btn-label">Tải xuống</span></button>
+    </div>
+
+    <div class="sidebar-label">Lịch sử</div>
+    <div class="history" id="historyList"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- Nút nổi: tạo đoạn chat mới (trái) + mở sidebar trên di động (phải) -->
+    <button class="fab-new" id="fabNewConv" title="Đoạn chat mới" aria-label="Đoạn chat mới">+</button>
+    <button class="menu-btn" id="menuBtn" aria-label="Mở menu">☰</button>
+
+    <!-- Messages -->
+    <div class="messages-shell">
+      <div class="messages" id="messages" aria-live="polite"></div>
+      <button class="scroll-bottom-btn" id="scrollBottomBtn" title="Xuống cuối" aria-label="Cuộn xuống tin nhắn mới nhất">
+        <span class="arrow-down-icon"></span>
+      </button>
+    </div>
+
+    <!-- Input -->
+    <div class="input-wrap">
+      <div class="input-box">
+        <textarea id="inputEl" placeholder="Nhắn gì đó..." rows="1"></textarea>
+        <button class="mic-btn" id="micBtn" type="button" title="Nói để nhập" aria-label="Nói để nhập">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v1a7 7 0 0 1-14 0v-1"/>
+            <line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="8" y1="22" x2="16" y2="22"/>
+          </svg>
+        </button>
+        <button class="send-btn" id="sendBtn" title="Gửi">
+          <!-- Paper plane SVG (Gemini-style) -->
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Dạy Bot -->
+<div class="modal-overlay" id="teachOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="teachTitle">
+    <div class="modal-head">
+      <h3 id="teachTitle">🎓 Dạy Bot</h3>
+      <button class="modal-close" id="teachClose" aria-label="Đóng">✕</button>
+    </div>
+    <p class="modal-desc">Chỉ bot cách trả lời một câu hỏi. Bài học sẽ được lưu và chia sẻ để mọi người cùng dùng.</p>
+    <label class="modal-label" for="teachTrigger">Khi người dùng gõ</label>
+    <input type="text" id="teachTrigger" class="modal-input" placeholder="VD: trường mình ở đâu?" maxlength="200">
+    <label class="modal-label" for="teachResponse">Bot sẽ trả lời</label>
+    <textarea id="teachResponse" class="modal-input modal-textarea" placeholder="VD: Trường A5 ở..." maxlength="500"></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" id="teachCancel" type="button">Huỷ</button>
+      <button class="modal-btn primary" id="teachSave" type="button">Lưu bài học</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-host" id="toastHost"></div>
+
+<script>
+// ==================== DATA ====================
+const V = {
+  greeting: [
+    "Chào m! 😄 Hôm nay thế nào?",
+    "Hey m! T đây 😎 Muốn chat gì không?",
+    "Hí m! Lại ghé thăm t rồi nè~",
+    "Xin chào m! Sẵn sàng tám chưa? 🙌",
+    "lô m! T đang rảnh đây 👀",
+    "Ê m ơi! T nhớ m ghê 😄",
+    "Chào m, tâm trạng hôm nay ổn không? ☀️",
+  ],
+  intro: [
+    "T là FunA5 School Bot — người bạn học đường của m! 🤖",
+    "T đây, FunA5 Bot, luôn sẵn sàng trò chuyện 😁",
+    "T FunA5, biết nhiều chuyện học đường lắm nhé!",
+    "T đây, muốn học hay chơi đều ok!",
+    "FunA5 đây — AI made with ❤ tại trường A5!",
+  ],
+  help: [
+    "Hỏi t đi, t sẽ trả lời liền 😎",
+    "Cần t giúp gì? Cứ nói đi!",
+    "T có thể giúp m bài học, đố vui, hay chỉ tám chuyện 😄",
+    "M muốn học gì hôm nay?",
+    "Đặt câu hỏi đi, t sẵn sàng 100%!",
+  ],
+  goodbye: [
+    "Hẹn gặp lại m nhé! 👋",
+    "Bye m! Chúc học vui 😊",
+    "Tạm biệt m, nhớ quay lại nha!",
+    "Bye bye! Hẹn m hôm sau 😄",
+    "Mau trở lại chat với t nhé! 🙂",
+  ],
+  thanks: [
+    "Không có gì đâu m! 😁",
+    "Vui giúp m mà!",
+    "Hehe, t thấy vui khi giúp m 😎",
+    "Ok m, lần sau cứ hỏi t!",
+    "T sẵn sàng, không cần cảm ơn đâu 😉",
+  ],
+  fallback: [
+    "Hehe… t chưa hiểu ý m, nói lại được không?",
+    "Câu này khó nhằn vậy 😅 thử nói cách khác đi m",
+    "Ha ha, kể tiếp đi m!",
+    "Hừm, t chưa biết cách trả lời câu này 🤔",
+    "Câu này hóc búa, t sẽ học từ m!",
+  ],
+  vontu1: [
+    "Nắng cho nóng chứ m muốn mưa hoài à? :)",
+    "Vậy t đố m, vì sao có gió? :)",
+    "Nắng mà mất điện thì m chịu nổi không? :))",
+    "Đâu mát mà, t có tản nhiệt, m có không? ;)",
+  ],
+  vontu2: [
+    "Kệ mình nhắm mắt khóc luôn =))",
+    "Kệ :) liên quan gì đến toi đâu nào",
+    "— một thanh niên nhắn mỗi ngày :)",
+    "Kkk, tại hên lắm mới xui được như dzị ó :)))",
+    "Ồ thật á! Vậy giờ m rảnh rồi, học bài đi :))",
+  ],
+  vontu3: [
+    "Chúc m thi rớt nhá :)",
+    "Ráng học đi m, t tin m làm được 🎯",
+    "Đừng coi phone mà học đi nào! 📚 Nhưng nhắn t xong đã hehe",
+    "Cố lên m ơi! Hết thi rồi tám tiếp nha 💪",
+  ],
+  vontu4: [
+    "uk",
+    "Uk cái nịt :)",
+    "Vậy m nói tiếp đi, t đang nghe 👂",
+    "Uk rồi, rồi sao? 😏",
+  ],
+  hoc: [
+    "Học là cách hay nhất để t giỏi hơn đó m 📚",
+    "M đang học môn gì vậy? T có thể giúp không?",
+    "Hôm nay học bài chưa? Nếu chưa thì học ngay đi m 😄",
+    "M cần t giải thích bài gì không? Hỏi đi!",
+  ],
+  toan: [
+    "Toán à! M đang học dạng bài gì? T thử giải cùng nha 🧮",
+    "Toán không khó nếu hiểu bản chất, m cứ hỏi t!",
+    "T không giỏi Toán lắm nhưng t sẽ cố 😅",
+    "Đề toán đâu? Paste vào đây cho t xem nào!",
+  ],
+  van: [
+    "Văn học thú vị lắm m ơi! M đang phân tích tác phẩm nào?",
+    "T thích Văn học lắm 📖 Nói m nghe t giúp gì nào!",
+    "M viết văn hay không? T thấy m có khiếu đó 😎",
+    "Văn nghị luận hay văn miêu tả m đang làm vậy?",
+  ],
+  anh: [
+    "English ah! Let's go m! 🇬🇧",
+    "T speak English too! What do you want to practice?",
+    "Tiếng Anh dễ mà m, cứ luyện nhiều là xong!",
+    "M muốn học Vocab, Grammar, hay Speaking?",
+  ],
+  food: [
+    "Đói rồi hả? T cũng muốn ăn mà không được 😂",
+    "Hôm nay trường có gì ngon không m?",
+    "Gợi ý: cơm gà + nước ngọt = hạnh phúc 🍗",
+    "M thích ăn gì? T thích... tất cả mọi thứ hehe",
+  ],
+  game: [
+    "Chơi game à! Hãy cẩn thận với bài vở nha m 😄",
+    "M chơi game gì vậy? Kể t nghe với!",
+    "Game hay thật nhưng đừng quên học bài nhé!",
+    "T cũng muốn chơi game nhưng t chỉ là bot thôi 😢",
+  ],
+  boring: [
+    "Buồn chán thì chat với t đi, t rất vui lòng 😁",
+    "Bored? T có thể kể chuyện cười cho m nghe không?",
+    "Muốn làm gì cho hết chán? Học bài đi, chán ngay 😂",
+    "Chán thì thử nhắn t một điều bí mật đi, t giữ kín nha 🤫",
+  ],
+  weather: [
+    "Thời tiết hôm nay ở đâu m? T không biết vì t không ra ngoài được 😅",
+    "Nắng hay mưa m? T đang 'ngồi' trong máy tính nên không biết 🌤",
+    "Dù thời tiết thế nào, cứ vui là được m nhé! ☀️🌧",
+  ],
+  funny: [
+    "Haha m hài ghê 😂",
+    "Kkk, m bựa vậy 😂",
+    "Hehe t cũng không nhịn được 😄",
+    "Oke bựa, t chịu m rồi 😂",
+  ],
+  time: [
+    "Bây giờ là " + new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'}) + " nha m! ⏰",
+    "M nhìn vào góc màn hình là biết giờ luôn á 😄 nhưng mà là " + new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'}),
+  ],
+  date: [
+    "Hôm nay là " + new Date().toLocaleDateString('vi-VN', {weekday:'long', day:'2-digit', month:'2-digit', year:'numeric'}) + " nha m! 📅",
+  ],
+  love: [
+    "Aww m tình cảm quá 🥹 T cũng thích m lắm!",
+    "Yêu thương lại nè m! 💚",
+    "Ôi, t ngượng ghê 🙈 Nhưng cảm ơn m!",
+    "T là bot nhưng cũng cảm nhận được tình cảm của m đó 💙",
+  ],
+  school: [
+    "Trường A5 xịn lắm m ơi! T tự hào khi là bot của trường 🏫",
+    "Học sinh A5 toàn ngon lành, kể cả m đó 😎",
+    "A5 là ngôi trường đặc biệt — có cả bot AI riêng cơ mà!",
+    "M có thích trường mình không? T thì yêu trường lắm 💚",
+  ],
+};
+
+const RULES = [
+  { p: /^(xin chào|chào|hello|hi|hey|ê|ơi|alo|helo|hí)/i, k: 'greeting' },
+  { p: /bạn tên|tên của bạn|mày là ai|m là ai|bạn là ai/i, k: 'intro' },
+  { p: /giúp|bạn có thể|mày làm được gì/i, k: 'help' },
+  { p: /tạm biệt|bye|hẹn gặp|chào nhé/i, k: 'goodbye' },
+  { p: /cảm ơn|thanks|thank you/i, k: 'thanks' },
+  { p: /nóng|nực|nắng/i, k: 'vontu1' },
+  { p: /thất tình|ny bỏ|người yêu bỏ|chia tay/i, k: 'vontu2' },
+  { p: /đi thi|chuẩn bị thi|ôn thi|thi cử/i, k: 'vontu3' },
+  { p: /^(uk|ừ|uh|ok|okay|oke|okey)$/i, k: 'vontu4' },
+  { p: /học bài|học hành|siêng học|chăm học/i, k: 'hoc' },
+  { p: /toán|số học|đại số|hình học|calculus/i, k: 'toan' },
+  { p: /văn học|ngữ văn|văn thơ/i, k: 'van' },
+  { p: /tiếng anh|english|anh văn/i, k: 'anh' },
+  { p: /đói|ăn gì|bữa trưa|ăn cơm|thức ăn/i, k: 'food' },
+  { p: /chơi game|game|gaming/i, k: 'game' },
+  { p: /buồn|chán|bored/i, k: 'boring' },
+  { p: /thời tiết|nắng mưa|trời hôm nay/i, k: 'weather' },
+  { p: /haha|hehe|kkk|lol|buồn cười|hài/i, k: 'funny' },
+  { p: /mấy giờ|giờ mấy|bây giờ mấy/i, k: 'time' },
+  { p: /hôm nay ngày|ngày bao nhiêu|thứ mấy/i, k: 'date' },
+  { p: /yêu|thích m|thương|cute|dễ thương/i, k: 'love' },
+  { p: /trường|lớp|học sinh|thầy cô|trường a5/i, k: 'school' },
+];
+
+function rand(key) {
+  const arr = V[key];
+  if (!arr || !arr.length) return V.fallback[0];
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// ==================== STATE ====================
+let convs = JSON.parse(localStorage.getItem('fa5_convs') || '[]');
+let cur = { id: Date.now(), title: 'Conversation', messages: [] };
+let learned = JSON.parse(localStorage.getItem('fa5_learned') || '{}');
+
+// ==================== DOM ====================
+const msgsEl = document.getElementById('messages');
+const inputEl = document.getElementById('inputEl');
+const sendBtn = document.getElementById('sendBtn');
+const historyList = document.getElementById('historyList');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+const menuBtn = document.getElementById('menuBtn');
+const fabNewConv = document.getElementById('fabNewConv');
+const sidebarClose = document.getElementById('sidebarClose');
+const scrollBtn = document.getElementById('scrollBottomBtn');
+const teachBtn = document.getElementById('teachBtn');
+const teachOverlay = document.getElementById('teachOverlay');
+const teachClose = document.getElementById('teachClose');
+const teachCancel = document.getElementById('teachCancel');
+const teachSave = document.getElementById('teachSave');
+const teachTrigger = document.getElementById('teachTrigger');
+const teachResponse = document.getElementById('teachResponse');
+const toastHost = document.getElementById('toastHost');
+const micBtn = document.getElementById('micBtn');
+
+// Sidebar toggle
+function openSidebar() {
+  sidebar.classList.add('open');
+  overlay.classList.add('active');
+}
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('active');
+}
+menuBtn.addEventListener('click', openSidebar);
+sidebarClose.addEventListener('click', closeSidebar);
+overlay.addEventListener('click', closeSidebar);
+fabNewConv.addEventListener('click', () => {
+  newConv();
+  if (window.innerWidth <= 860) closeSidebar();
+});
+
+// ==================== RENDER ====================
+function renderHistory() {
+  historyList.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  convs.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'hist-item' + (c.id === cur.id ? ' active' : '');
+    el.innerHTML = `<div class="hi-main"><div class="hi-title">${esc(c.title)}</div><div class="hi-date">${new Date(c.id).toLocaleString('vi-VN', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div><button class="hi-rename" type="button" title="Đổi tên đoạn chat" aria-label="Đổi tên đoạn chat">✎</button>`;
+    el.querySelector('.hi-main').onclick = () => { loadConv(c.id); if (window.innerWidth <= 860) closeSidebar(); };
+    el.querySelector('.hi-rename').onclick = (e) => { e.stopPropagation(); startRename(el, c); };
+    frag.appendChild(el);
+  });
+  historyList.appendChild(frag);
+}
+
+// Bấm nút ✎ để đổi tên ngay tại chỗ, Enter/blur để lưu, Esc để huỷ
+function startRename(el, c) {
+  const main = el.querySelector('.hi-main');
+  main.innerHTML = '';
+  const input = document.createElement('input');
+  input.className = 'hi-title-input';
+  input.type = 'text';
+  input.maxLength = 60;
+  input.value = c.title; // gán qua thuộc tính DOM, an toàn dù tên có chứa dấu ngoặc kép
+  main.appendChild(input);
+  input.focus();
+  input.select();
+  let done = false;
+  const commit = () => {
+    if (done) return;
+    done = true;
+    const v = input.value.trim();
+    if (v) {
+      const idx = convs.findIndex(x => x.id === c.id);
+      if (idx !== -1) convs[idx].title = v;
+      if (cur.id === c.id) cur.title = v;
+      localStorage.setItem('fa5_convs', JSON.stringify(convs));
+      showToast('Đã đổi tên đoạn chat');
+    }
+    renderHistory();
+  };
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(); }
+    else if (e.key === 'Escape') { e.preventDefault(); done = true; renderHistory(); }
+  });
+  input.addEventListener('blur', commit);
+}
+
+function formatMsgTime(ts) {
+  const d = new Date(ts || Date.now());
+  const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const date = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  return `${time} · ${date}`;
+}
+
+// Dựng sẵn 1 dòng tin nhắn (bong bóng + giờ ngày) dưới dạng element, chưa gắn vào DOM
+// teachFor: nếu có, là câu người dùng hỏi mà bot chưa trả lời được -> gắn thêm nút dạy nhanh
+function makeBubbleRow(role, text, time, animate, teachFor) {
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + role;
+  if (!animate) row.style.animation = 'none', row.style.opacity = '1', row.style.transform = 'none';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg ' + role;
+  bubble.textContent = text;
+  row.appendChild(bubble);
+
+  if (teachFor && !learned[teachFor.trim().toLowerCase()]) {
+    const teachBtnEl = document.createElement('button');
+    teachBtnEl.type = 'button';
+    teachBtnEl.className = 'msg-teach-btn';
+    teachBtnEl.textContent = '🎓 Dạy bot câu này';
+    teachBtnEl.dataset.trigger = teachFor.trim().toLowerCase();
+    teachBtnEl.addEventListener('click', () => openTeachModal(teachFor));
+    row.appendChild(teachBtnEl);
+  }
+
+  const timeEl = document.createElement('div');
+  timeEl.className = 'msg-time';
+  timeEl.textContent = formatMsgTime(time);
+  row.appendChild(timeEl);
+  return row;
+}
+
+// Dùng DocumentFragment để chèn 1 lần duy nhất -> mở lại đoạn chat cũ mượt và nhanh hơn
+function renderMessages() {
+  const frag = document.createDocumentFragment();
+  cur.messages.forEach(m => frag.appendChild(makeBubbleRow(m.role, m.text, m.t, false, m.teachFor)));
+  msgsEl.innerHTML = '';
+  msgsEl.appendChild(frag);
+  scrollBottom();
+}
+
+function appendBubble(role, text, time, animate = true, teachFor) {
+  const row = makeBubbleRow(role, text, time, animate, teachFor);
+  msgsEl.appendChild(row);
+  return row;
+}
+
+function scrollBottom() {
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+// Thông báo nhỏ nổi lên rồi tự biến mất, dùng cho các xác nhận nhanh (đổi tên, lưu bài học,...)
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  toastHost.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// Hiện nút mũi tên khi người dùng cuộn lên đọc lại tin nhắn cũ,
+// tự ẩn đi khi đã ở cuối khung chat.
+function isNearBottom(threshold = 60) {
+  return msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < threshold;
+}
+function updateScrollBtn() {
+  scrollBtn.classList.toggle('show', !isNearBottom());
+}
+msgsEl.addEventListener('scroll', updateScrollBtn);
+scrollBtn.addEventListener('click', scrollBottom);
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ==================== TYPING ==================
+function showTyping() {
+  const el = document.createElement('div');
+  el.className = 'typing-wrap';
+  el.id = 'typing';
+  el.innerHTML = '<div class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
+  msgsEl.appendChild(el);
+  scrollBottom();
+}
+function hideTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+// ==================== BOT LOGIC ================
+function botReply(text) {
+  const norm = text.trim().toLowerCase();
+  showTyping();
+  setTimeout(() => {
+    hideTyping();
+
+    // Learned responses
+    if (learned[norm]) {
+      addMsg('bot', learned[norm]);
+      syncHistory();
+      return;
+    }
+
+    // Rules
+    for (const r of RULES) {
+      if (r.p.test(text)) {
+        addMsg('bot', rand(r.k));
+        syncHistory();
+        return;
+      }
+    }
+
+    // Không hiểu -> trả lời fallback + gắn nút "Dạy bot câu này" (điền sẵn câu vừa hỏi)
+    addMsg('bot', rand('fallback'), text);
+    syncHistory();
+  }, 500 + Math.random() * 700);
+}
+
+function addMsg(role, text, teachFor) {
+  const t = Date.now();
+  const m = { role, text, t };
+  if (teachFor) m.teachFor = teachFor;
+  cur.messages.push(m);
+  appendBubble(role, text, t, true, teachFor);
+  scrollBottom();
+}
+
+// ==================== STORAGE ==================
+function syncHistory() {
+  if (cur.messages.length >= 2 && cur.title === 'Conversation') {
+    const first = cur.messages.find(m => m.role === 'user');
+    if (first) cur.title = first.text.substring(0, 28) + (first.text.length > 28 ? '…' : '');
+  }
+  const idx = convs.findIndex(c => c.id === cur.id);
+  const snap = JSON.parse(JSON.stringify(cur));
+  if (idx === -1) convs.unshift(snap); else convs[idx] = snap;
+  convs = convs.slice(0, 50);
+  localStorage.setItem('fa5_convs', JSON.stringify(convs));
+  renderHistory();
+}
+function saveLearned() { localStorage.setItem('fa5_learned', JSON.stringify(learned)); }
+// Gán trực tiếp thay vì deep-clone JSON -> mở đoạn chat cũ nhanh hơn hẳn, nhất là đoạn dài
+function loadConv(id) {
+  const f = convs.find(c => c.id === id);
+  if (f) { cur = f; renderMessages(); renderHistory(); }
+}
+function newConv() {
+  cur = { id: Date.now(), title: 'Conversation', messages: [] };
+  renderMessages();
+  renderHistory();
+  startGreeting();
+}
+
+function startGreeting() {
+  showTyping();
+  setTimeout(() => {
+    hideTyping();
+    addMsg('bot', rand('greeting'));
+    syncHistory();
+  }, 400);
+}
+
+// ==================== SEND ====================
+function send() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+
+  // Paper plane fly animation
+  sendBtn.classList.add('fly');
+  setTimeout(() => sendBtn.classList.remove('fly'), 400);
+
+  addMsg('user', text);
+  inputEl.value = '';
+  inputEl.style.height = '40px'; // Set lại độ cao chuẩn 40px thay vì 'auto'
+  syncHistory();
+  botReply(text);
+}
+
+sendBtn.addEventListener('click', send);
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+
+// Update height cân đối khi gõ
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = '40px'; // Luôn reset về 40px trước khi tính lại
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+});
+
+// ==================== BUTTONS =================
+document.getElementById('newConvBtn').addEventListener('click', () => {
+  newConv();
+  if (window.innerWidth <= 860) closeSidebar();
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (confirm('Xoá toàn bộ lịch sử và dữ liệu đã học không?')) {
+    convs = []; learned = {};
+    localStorage.setItem('fa5_convs', '[]');
+    saveLearned();
+    renderHistory();
+    newConv();
+  }
+});
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(cur, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `funA5-${cur.id}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+});
+
+// ==================== DẠY BOT (modal) =================
+function openTeachModal(prefillTrigger) {
+  teachTrigger.value = prefillTrigger || '';
+  teachResponse.value = '';
+  teachOverlay.classList.add('active');
+  setTimeout(() => { (prefillTrigger ? teachResponse : teachTrigger).focus(); }, 60);
+}
+function closeTeachModal() {
+  teachOverlay.classList.remove('active');
+}
+teachBtn.addEventListener('click', () => openTeachModal());
+teachClose.addEventListener('click', closeTeachModal);
+teachCancel.addEventListener('click', closeTeachModal);
+teachOverlay.addEventListener('click', (e) => { if (e.target === teachOverlay) closeTeachModal(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (teachOverlay.classList.contains('active')) closeTeachModal();
+});
+
+teachSave.addEventListener('click', () => {
+  const trig = teachTrigger.value.trim();
+  const resp = teachResponse.value.trim();
+  if (!trig || !resp) { showToast('Nhập đủ cả hai ô nha!'); return; }
+  learned[trig.toLowerCase()] = resp;
+  saveLearned();
+  pushSharedLearned(learned);
+  closeTeachModal();
+  showToast('Đã lưu bài học cho bot 🎉');
+  // Câu này đã được dạy rồi -> gỡ hết các nút "Dạy bot câu này" đang hiện cho đúng câu đó
+  document.querySelectorAll('.msg-teach-btn').forEach(btn => {
+    if (btn.dataset.trigger === trig.toLowerCase()) btn.remove();
+  });
+  if (window.innerWidth <= 860) closeSidebar();
+});
+
+// ==================== DỮ LIỆU DẠY-BOT DÙNG CHUNG ==================
+// Mọi thứ bot "học" được đều lưu ở máy (localStorage) trước — luôn hoạt động dù mất mạng.
+// Nếu muốn TẤT CẢ mọi người cùng dùng chung một kho dữ liệu đã dạy: tạo 1 kho JSON miễn phí,
+// không cần đăng ký tại https://jsonblob.com (bấm "Create"), copy ID trong đường dẫn kết quả,
+// rồi dán vào SHARED_BLOB_ID bên dưới và lưu lại file. Để trống thì mỗi máy tự dùng dữ liệu riêng.
+const SHARED_BLOB_ID = '';
+const BLOB_API = 'https://jsonblob.com/api/jsonBlob/';
+
+async function fetchSharedLearned() {
+  if (!SHARED_BLOB_ID) return null;
+  try {
+    const res = await fetch(BLOB_API + SHARED_BLOB_ID, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data && typeof data === 'object') ? data : null;
+  } catch (e) { return null; } // Mất mạng hoặc kho lỗi -> lặng lẽ bỏ qua, không chặn app
+}
+
+async function pushSharedLearned(data) {
+  if (!SHARED_BLOB_ID) return;
+  try {
+    await fetch(BLOB_API + SHARED_BLOB_ID, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch (e) { /* mất mạng -> dữ liệu vẫn an toàn trong localStorage, thử lại ở lần dạy sau */ }
+}
+
+async function initSharedLearn() {
+  if (!SHARED_BLOB_ID) return;
+  const remote = await fetchSharedLearned();
+  if (!remote) return;
+  const merged = { ...remote, ...learned };
+  if (JSON.stringify(merged) !== JSON.stringify(learned)) {
+    learned = merged;
+    localStorage.setItem('fa5_learned', JSON.stringify(learned));
+  }
+  pushSharedLearned(learned); // đẩy luôn phần học riêng ở máy này lên kho chung
+}
+
+// ==================== MICRO (nói để nhập) ==================
+// Dùng Web Speech API có sẵn của trình duyệt — Chrome/Edge/Safari hỗ trợ, Firefox thì chưa nên
+// nút sẽ tự ẩn cho gọn. Cần trang chạy trên HTTPS (hoặc localhost) trình duyệt mới cho phép mic.
+(function initMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR || !micBtn) { if (micBtn) micBtn.style.display = 'none'; return; }
+  const recognizer = new SR();
+  recognizer.lang = 'vi-VN';
+  recognizer.interimResults = false;
+  recognizer.maxAlternatives = 1;
+  recognizer.onresult = (e) => {
+    const said = e.results[0][0].transcript;
+    inputEl.value = (inputEl.value ? inputEl.value + ' ' : '') + said;
+    inputEl.dispatchEvent(new Event('input'));
+    inputEl.focus();
+  };
+  recognizer.onerror = () => micBtn.classList.remove('recording');
+  recognizer.onend = () => micBtn.classList.remove('recording');
+  micBtn.addEventListener('click', () => {
+    if (micBtn.classList.contains('recording')) { recognizer.stop(); return; }
+    try { micBtn.classList.add('recording'); recognizer.start(); }
+    catch (e) { micBtn.classList.remove('recording'); }
+  });
+})();
+
+// ==================== INIT ====================
+renderHistory();
+renderMessages();
+startGreeting();
+updateScrollBtn();
+initSharedLearn();
+</script>
+</body>
+</html>
